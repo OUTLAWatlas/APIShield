@@ -1,0 +1,55 @@
+version: '3.8'
+services:
+  backend:
+    build: ./backend
+    container_name: shield-backend
+    restart: always
+    environment:
+      - PORT=3000
+      - DB_HOST=db
+      - DB_USER=postgres
+      - DB_PASS=password123
+      - DB_NAME=shield_db
+      - REDIS_HOST=redis
+    networks:
+      - internal-net
+  gateway:
+    build: ./gateway
+    container_name: shield-gateway
+    restart: always
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    networks:
+      - internal-net
+  db:
+    image: postgres:15-alpine
+    container_name: shield-db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: shield_db
+    volumes:
+      - pg-data:/var/lib/postgresql/data
+    networks:
+      - internal-net
+  redis:
+    image: redis:alpine
+    container_name: shield-redis
+    restart: always
+
+    command: redis-server --appendonly yes
+
+    volumes:
+      - redis-data:/data
+    networks:
+      - internal-net
+
+volumes:
+  pg-data:
+  redis-data:
+networks:
+  internal-net:
+    driver: bridge

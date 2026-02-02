@@ -1,0 +1,13 @@
+# Dependencies
+node_modules/
+
+# Environment Variables (Protect your secrets!)
+.env
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Docker data (if you mapped volumes locally)
+pg-data/
+redis-data/
