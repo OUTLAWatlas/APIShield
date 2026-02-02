@@ -58,7 +58,7 @@ Clone the repo:
 
 Bash
 
-git clone [https://github.com/your-username/apishield.git](https://github.com/your-username/apishield.git)
+git clone [https://github.com/OUTLAWatlas/apishield.git](https://github.com/OUTLAWatlas/apishield.git)
 cd apishield
 Start the System:
 
