@@ -1,172 +1,98 @@
 APIShield
 
-APIShield is a containerized infrastructure project that demonstrates the API Gateway pattern in a production-style setup.
+APIShield is a Dockerized API gateway setup that demonstrates how a Node.js backend can be protected and exposed through a single controlled entry point.
 
-It isolates a Node.js backend behind an Nginx reverse proxy, ensuring that all incoming traffic is filtered, rate-limited, and controlled before reaching application logic.
+The project focuses on infrastructure, isolation, and deployability, not application features.
 
-The project focuses on security boundaries, deployability, and infrastructure-as-code using Docker and Docker Compose.
+What this project shows
 
-Architecture Overview
+API Gateway pattern using Nginx
 
-All services run on a private Docker network.
-Only the Nginx gateway is exposed publicly.
+Backend isolation behind a reverse proxy
 
+Rate limiting and request control
+
+Multi-service setup using Docker Compose
+
+Architecture
 Client
   ↓
 Nginx Gateway (8080)
   ↓
-Node.js Backend
+Node.js API
   ↓
-PostgreSQL / Redis
+PostgreSQL + Redis
 
-Services
-1. Gateway (Nginx)
 
-Role: Reverse Proxy and API Shield
+Only the gateway is accessible from outside the Docker network.
 
-Enforces rate limiting (5 requests/second)
+Services (quick view)
 
-Sanitizes and forwards headers
+Nginx (Gateway)
 
-Performs health checks
+Reverse proxy
 
-Acts as the single public entry point
+Rate limiting (5 req/sec)
 
-Exposed Port: 8080
+Public entry point
 
-2. Backend (Node.js / Express)
-
-Role: Application logic
-
-Not exposed to the host
-
-Accessible only through the Nginx gateway
-
-Logs requests to PostgreSQL
-
-Increments a global request counter in Redis
-
-3. Database (PostgreSQL)
-
-Role: Persistent storage
-
-Stores access logs
-
-Uses a Docker volume (pg-data) for persistence
-
-Accessible only within the Docker network
-
-4. Cache (Redis)
-
-Role: High-speed global counter
-
-Tracks request hits
-
-AOF persistence enabled to survive restarts
+Node.js (Backend)
 
 Internal-only service
 
-Key Design Decisions
+Logs requests to Postgres
 
-Single Entry Point: Only the gateway is reachable from outside
+Tracks hits in Redis
 
-Service Isolation: Backend, database, and cache are never exposed
+PostgreSQL
 
-Infrastructure First: Features are minimal; system boundaries are the focus
+Stores access logs
 
-Reproducibility: Entire stack starts with one command
+Persistent volume
 
-Configuration via Environment Variables: No hardcoded secrets
+Redis
 
-Getting Started
-Prerequisites
+Global request counter
 
-Docker
+AOF persistence enabled
 
-Docker Compose
-
-Setup
-
-Clone the repository:
-
+Running the project
 git clone https://github.com/OUTLAWatlas/APIShield.git
-
 cd APIShield
+docker-compose up --build
 
-
-Start the system:
-
-docker-compose up --build -d
-
-
-Verify running services:
-
-docker-compose ps
-
-Testing the Gateway
-1. Valid Request (Through Gateway)
+Testing
 curl http://localhost:8080/api/data
 
 
-Expected response:
+Direct access to backend or database ports is blocked.
 
-{
-  "message": "APIShield Protected Response",
-  "data_sources": {
-    "postgres_logs": 12,
-    "redis_hits": 12
-  }
-}
+Rate limiting can be triggered by spamming the gateway.
 
-2. Security Test (Direct Access)
+Why this exists
 
-Attempt to bypass the gateway:
+Most student projects focus on features.
 
-curl http://localhost:3000/api/data
+This one focuses on:
 
+boundaries
 
-Result:
+reliability
 
-Connection refused
+how systems actually run
 
+Scope (intentional limits)
 
-The backend is correctly isolated.
+No frontend
 
-3. Rate Limiting Test
+No cloud deployment
 
-Trigger Nginx rate limiting:
+No Kubernetes
 
-for i in {1..20}; do
-  curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/api/data
-done
+Next improvements
 
+CI to build containers on push
 
-Expected behavior:
+Structured logging
 
-Initial responses return 200
-
-Excess requests return 503 Service Temporarily Unavailable
-
-Technical Summary
-
-Networking: Custom Docker bridge network
-
-Persistence: Named Docker volumes for PostgreSQL and Redis
-
-Configuration: Environment variables defined in docker-compose.yml
-
-Deployment Model: Local, reproducible, containerized system
-
-Project Scope
-
-This project intentionally avoids:
-
-Frontend development
-
-Cloud deployment
-
-Kubernetes
-
-Feature-heavy application logic
-
-The focus is on API boundaries, container networking, and deployability.
+Metrics / observability
