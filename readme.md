@@ -4,8 +4,6 @@
 
 The architecture emphasizes **security boundaries**, **deployability**, and **infrastructure-as-code** using Docker Compose.
 
----
-
 ## 🏗 System Architecture
 
 The system consists of four services running on a private Docker network (`internal-net`). The only public entry point is the Nginx Gateway.
@@ -19,6 +17,7 @@ graph TD
         Backend -->|Persist Logs| DB[(PostgreSQL)]
         Backend -->|Cache Counters| Redis[(Redis)]
     end
+```
 Services
 Gateway (Nginx):
 
