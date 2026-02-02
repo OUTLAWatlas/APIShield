@@ -59,12 +59,15 @@ Clone the repo:
 Bash
 
 git clone [https://github.com/OUTLAWatlas/apishield.git](https://github.com/OUTLAWatlas/apishield.git)
+
 cd apishield
+
 Start the System:
 
 Bash
 
 docker-compose up --build -d
+
 Verify Running Services:
 
 Bash
