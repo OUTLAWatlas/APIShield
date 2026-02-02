@@ -1,83 +1,113 @@
-# APIShield
+APIShield
 
-**APIShield** is a containerized infrastructure project demonstrating the **API Gateway pattern**. It isolates a Node.js backend behind an Nginx reverse proxy, ensuring that all traffic is filtered, rate-limited, and managed before reaching the application logic.
+APIShield is a containerized infrastructure project that demonstrates the API Gateway pattern in a production-style setup.
 
-The architecture emphasizes **security boundaries**, **deployability**, and **infrastructure-as-code** using Docker Compose.
+It isolates a Node.js backend behind an Nginx reverse proxy, ensuring that all incoming traffic is filtered, rate-limited, and controlled before reaching application logic.
 
-## 🏗 System Architecture
+The project focuses on security boundaries, deployability, and infrastructure-as-code using Docker and Docker Compose.
 
-The system consists of four services running on a private Docker network (`internal-net`). The only public entry point is the Nginx Gateway.
+Architecture Overview
 
-```mermaid
-graph TD
-    User((User)) -->|Port 8080| Gateway[Nginx Gateway]
-    
-    subgraph "Private Docker Network"
-        Gateway -->|Proxy Pass| Backend[Node.js API]
-        Backend -->|Persist Logs| DB[(PostgreSQL)]
-        Backend -->|Cache Counters| Redis[(Redis)]
-    end
-```
+All services run on a private Docker network.
+Only the Nginx gateway is exposed publicly.
+
+Client
+  ↓
+Nginx Gateway (8080)
+  ↓
+Node.js Backend
+  ↓
+PostgreSQL / Redis
+
 Services
-Gateway (Nginx):
+1. Gateway (Nginx)
 
-Role: Reverse Proxy & Shield.
+Role: Reverse Proxy and API Shield
 
-Features: Rate limiting (5 req/sec), Header sanitization, Health checks.
+Enforces rate limiting (5 requests/second)
 
-Port: Exposed on 8080.
+Sanitizes and forwards headers
 
-Backend (Node.js/Express):
+Performs health checks
 
-Role: Application logic.
+Acts as the single public entry point
 
-Security: Not exposed to the host. Accessible only via Gateway.
+Exposed Port: 8080
 
-Logic: Logs visits to Postgres, increments global counter in Redis.
+2. Backend (Node.js / Express)
 
-Database (PostgreSQL):
+Role: Application logic
 
-Role: Persistent storage for access logs.
+Not exposed to the host
 
-Volume: Data persists in pg-data volume.
+Accessible only through the Nginx gateway
 
-Cache (Redis):
+Logs requests to PostgreSQL
 
-Role: High-speed global request counter.
+Increments a global request counter in Redis
 
-Persistence: AOF enabled to survive restarts.
+3. Database (PostgreSQL)
 
-🚀 Getting Started
+Role: Persistent storage
+
+Stores access logs
+
+Uses a Docker volume (pg-data) for persistence
+
+Accessible only within the Docker network
+
+4. Cache (Redis)
+
+Role: High-speed global counter
+
+Tracks request hits
+
+AOF persistence enabled to survive restarts
+
+Internal-only service
+
+Key Design Decisions
+
+Single Entry Point: Only the gateway is reachable from outside
+
+Service Isolation: Backend, database, and cache are never exposed
+
+Infrastructure First: Features are minimal; system boundaries are the focus
+
+Reproducibility: Entire stack starts with one command
+
+Configuration via Environment Variables: No hardcoded secrets
+
+Getting Started
 Prerequisites
-Docker & Docker Compose
 
-Installation
-Clone the repo:
+Docker
 
-Bash
+Docker Compose
 
-git clone [https://github.com/OUTLAWatlas/apishield.git](https://github.com/OUTLAWatlas/apishield.git)
-cd apishield
-Start the System:
+Setup
 
-Bash
+Clone the repository:
+
+git clone https://github.com/OUTLAWatlas/APIShield.git
+cd APIShield
+
+
+Start the system:
 
 docker-compose up --build -d
-Verify Running Services:
 
-Bash
+
+Verify running services:
 
 docker-compose ps
-🧪 Testing the Shield
-1. Valid Request (Via Gateway)
-Access the API through the public gateway.
 
-Bash
-
+Testing the Gateway
+1. Valid Request (Through Gateway)
 curl http://localhost:8080/api/data
-Expected Response:
 
-JSON
+
+Expected response:
 
 {
   "message": "APIShield Protected Response",
@@ -86,24 +116,56 @@ JSON
     "redis_hits": 12
   }
 }
-2. Security Test (Direct Access)
-Try to bypass the gateway and hit the backend port (3000) or DB port (5432).
 
-Bash
+2. Security Test (Direct Access)
+
+Attempt to bypass the gateway:
 
 curl http://localhost:3000/api/data
-# Result: Connection Refused (Success! The backend is hidden)
-3. Rate Limit Test
-Spam the gateway to trigger Nginx protection.
 
-Bash
 
-for i in {1..20}; do curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/api/data; done
-Result: You will see 200 responses initially, followed by 503 Service Temporarily Unavailable once the rate limit is exceeded.
+Result:
 
-🔧 Technical Implementation
-Networking: Uses a custom bridge network to isolate backend services.
+Connection refused
 
-Persistence: Docker Volumes for Postgres (pg-data) and Redis (redis-data).
 
-Configuration: All services configured via Environment Variables in docker-compose.yml.
+The backend is correctly isolated.
+
+3. Rate Limiting Test
+
+Trigger Nginx rate limiting:
+
+for i in {1..20}; do
+  curl -s -o /dev/null -w "%{http_code}\n" http://localhost:8080/api/data
+done
+
+
+Expected behavior:
+
+Initial responses return 200
+
+Excess requests return 503 Service Temporarily Unavailable
+
+Technical Summary
+
+Networking: Custom Docker bridge network
+
+Persistence: Named Docker volumes for PostgreSQL and Redis
+
+Configuration: Environment variables defined in docker-compose.yml
+
+Deployment Model: Local, reproducible, containerized system
+
+Project Scope
+
+This project intentionally avoids:
+
+Frontend development
+
+Cloud deployment
+
+Kubernetes
+
+Feature-heavy application logic
+
+The focus is on API boundaries, container networking, and deployability.
